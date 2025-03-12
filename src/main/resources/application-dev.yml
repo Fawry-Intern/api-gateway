@@ -4,3 +4,30 @@ eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8765/eureka
+
+#################################################user-API##########################################
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: public-api
+          uri: lb://USER-API
+          predicates:
+            - Path=/api/auth/**
+
+        - id: private-admin-api
+          uri: lb://USER-API
+          predicates:
+            - Path=/api/user/activate/**
+            - Path=/api/user/deactivate/**
+            - Path=/api/user
+          filters:
+            - name: JwtAuthAdmin
+
+        - id: private-user-api
+          uri: lb://USER-API
+          predicates:
+            - Path=/api/user/**
+          filters:
+            - name: JwtAuthUser
+          
