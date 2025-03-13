@@ -1,12 +1,14 @@
 package com.fawry.gatewayapi;
 
 import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;
@@ -31,32 +33,43 @@ public class JwtAuthAdmin extends AbstractGatewayFilterFactory<JwtAuthAdmin.Conf
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {
             String authHeader = exchange.getRequest().getHeaders().getFirst("Authorization");
-            String token;
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                token = authHeader.substring(7);
-            } else {
-                token = "";
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return handleUnauthorized(exchange, "Missing or invalid Authorization header");
             }
+
+            String token = authHeader.substring(7); // Extract token
+
             return webClient.build().get()
                     .uri("lb://USER-API/api/token/admin/validation")
                     .headers(httpHeaders -> httpHeaders.setBearerAuth(token))
                     .exchangeToMono(clientResponse -> {
                         if (clientResponse.statusCode().equals(HttpStatus.OK)) {
-                            return chain.filter(exchange);
+                            return clientResponse.bodyToMono(String.class)
+                                    .flatMap(userId -> forwardRequestWithUserId(exchange, chain, userId));
                         }
-                        Function<String, Mono<Void>> errorFun = error -> {
-                            ServerHttpResponse response = exchange.getResponse();
-                            response.setStatusCode(clientResponse.statusCode());
-                            response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-                            byte[] errorBytes = error.getBytes();
-                            return response.writeWith(Mono.just(response.bufferFactory().wrap(errorBytes)));
-                        };
-                        return clientResponse.bodyToMono(String.class).flatMap(errorFun);
+                        return clientResponse.bodyToMono(String.class).flatMap(error -> handleUnauthorized(exchange, error));
                     });
         };
-
     }
-    public static class Config {
 
+    private Mono<Void> forwardRequestWithUserId(ServerWebExchange exchange, GatewayFilterChain chain, String userId) {
+        ServerWebExchange modifiedExchange = exchange.mutate()
+                .request(exchange.getRequest().mutate()
+                        .header("UserId", userId)  // Injecting UserId as header
+                        .build())
+                .build();
+
+        return chain.filter(modifiedExchange);
+    }
+
+    private Mono<Void> handleUnauthorized(ServerWebExchange exchange, String error) {
+        ServerHttpResponse response = exchange.getResponse();
+        response.setStatusCode(HttpStatus.UNAUTHORIZED);
+        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        byte[] errorBytes = error.getBytes();
+        return response.writeWith(Mono.just(response.bufferFactory().wrap(errorBytes)));
+    }
+
+    public static class Config {
     }
 }

@@ -5,7 +5,6 @@ eureka:
     serviceUrl:
       defaultZone: http://localhost:8765/eureka
 
-#################################################user-API##########################################
 spring:
   cloud:
     gateway:
@@ -14,15 +13,15 @@ spring:
           uri: lb://USER-API
           predicates:
             - Path=/api/auth/**
+          order: 3
 
         - id: private-admin-api
           uri: lb://USER-API
           predicates:
-            - Path=/api/user/activate/**
-            - Path=/api/user/deactivate/**
-            - Path=/api/user
+            - Path=/api/user,/api/user/activate/**,/api/user/deactivate/**
           filters:
             - name: JwtAuthAdmin
+          order: 1
 
         - id: private-user-api
           uri: lb://USER-API
@@ -30,4 +29,4 @@ spring:
             - Path=/api/user/**
           filters:
             - name: JwtAuthUser
-          
+          order: 2
