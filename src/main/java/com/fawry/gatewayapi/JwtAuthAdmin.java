@@ -1,5 +1,6 @@
 package com.fawry.gatewayapi;
 
+import com.fawry.gatewayapi.dto.UserClaimsDTO;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
@@ -13,6 +14,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 @Component
@@ -44,18 +46,22 @@ public class JwtAuthAdmin extends AbstractGatewayFilterFactory<JwtAuthAdmin.Conf
                     .headers(httpHeaders -> httpHeaders.setBearerAuth(token))
                     .exchangeToMono(clientResponse -> {
                         if (clientResponse.statusCode().equals(HttpStatus.OK)) {
-                            return clientResponse.bodyToMono(String.class)
-                                    .flatMap(userId -> forwardRequestWithUserId(exchange, chain, userId));
+                            return clientResponse.bodyToMono(UserClaimsDTO.class)
+                                    .flatMap(claims -> forwardRequestWithUserId(exchange, chain, claims));
                         }
                         return clientResponse.bodyToMono(String.class).flatMap(error -> handleUnauthorized(exchange, error));
                     });
         };
     }
 
-    private Mono<Void> forwardRequestWithUserId(ServerWebExchange exchange, GatewayFilterChain chain, String userId) {
+    private Mono<Void> forwardRequestWithUserId(ServerWebExchange exchange, GatewayFilterChain chain,UserClaimsDTO claims) {
         ServerWebExchange modifiedExchange = exchange.mutate()
                 .request(exchange.getRequest().mutate()
-                        .header("UserId", userId)  // Injecting UserId as header
+                        .headers(httpHeaders -> {
+                            httpHeaders.set("UserId", claims.UserId());
+                            httpHeaders.set("Email", claims.Email());
+                            httpHeaders.set("Role", claims.Role());
+                        })
                         .build())
                 .build();
 
