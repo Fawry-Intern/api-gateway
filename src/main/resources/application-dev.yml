@@ -1,14 +1,29 @@
+
+
+####################################################   EUREKA  ####################################################
 server:
   port: 1111
 eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8765/eureka
-
-####################################################   USER-API   ####################################################
+####################################################   CORS   ####################################################
 spring:
   cloud:
     gateway:
+      globalCors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:4200/"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+####################################################   USER-API   ####################################################
       routes:
         - id: public-api
           uri: lb://USER-API
@@ -40,3 +55,13 @@ spring:
             - Path=/api/consumptions/**, api/coupons/**
           filters:
             - name: JwtAuthAdmin
+####################################################   ORDER-API   ####################################################
+
+        - id: private-order-api
+          uri: lb://ORDER-API
+          predicates:
+            - Path=/api/order/**
+          filters:
+            - name: JwtAuthCustomer
+####################################################   SHIPPING-API   ####################################################
+
