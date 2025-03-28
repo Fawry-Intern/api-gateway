@@ -5,6 +5,7 @@ eureka:
     serviceUrl:
       defaultZone: http://localhost:8765/eureka
 
+####################################################   USER-API   ####################################################
 spring:
   cloud:
     gateway:
@@ -18,7 +19,7 @@ spring:
         - id: private-admin-api
           uri: lb://USER-API
           predicates:
-            - Path=/api/user,/api/user/activate/**,/api/user/deactivate/**
+            - Path=/api/user,/api/user/activate/**,/api/user/deactivate/**,/api/user/create-delivery/**
           filters:
             - name: JwtAuthAdmin
           order: 1
@@ -30,3 +31,12 @@ spring:
           filters:
             - name: JwtAuthUser
           order: 2
+
+####################################################   COUPON-API   ####################################################
+
+        - id: private-coupon-api
+          uri: lb://COUPON-API
+          predicates:
+            - Path=/api/consumptions/**, api/coupons/**
+          filters:
+            - name: JwtAuthAdmin
