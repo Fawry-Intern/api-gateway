@@ -1,12 +1,11 @@
-
-
-####################################################   EUREKA  ####################################################
+####################################################   EUREKA   ####################################################
 server:
   port: 1111
 eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8765/eureka
+
 ####################################################   CORS   ####################################################
 spring:
   cloud:
@@ -23,7 +22,8 @@ spring:
               - OPTIONS
             allowedHeaders:
               - "*"
-####################################################   USER-API   ####################################################
+
+      ####################################################   USER-API   ####################################################
       routes:
         - id: public-api
           uri: lb://USER-API
@@ -34,7 +34,7 @@ spring:
         - id: private-admin-api
           uri: lb://USER-API
           predicates:
-            - Path=/api/user,/api/user/activate/**,/api/user/deactivate/**,/api/user/create-delivery/**
+            - Path=/api/user, /api/user/activate/**, /api/user/deactivate/**, /api/user/create-delivery/**
           filters:
             - name: JwtAuthAdmin
           order: 1
@@ -47,21 +47,40 @@ spring:
             - name: JwtAuthUser
           order: 2
 
-####################################################   COUPON-API   ####################################################
-
+        ####################################################   COUPON-API   ####################################################
         - id: private-coupon-api
           uri: lb://COUPON-API
           predicates:
-            - Path=/api/consumptions/**, api/coupons/**
+            - Path=/api/consumptions/**, /api/coupons/**
           filters:
             - name: JwtAuthAdmin
-####################################################   ORDER-API   ####################################################
 
+        ####################################################   ORDER-API   ####################################################
         - id: private-order-api
           uri: lb://ORDER-API
           predicates:
             - Path=/api/order/**
           filters:
             - name: JwtAuthCustomer
-####################################################   SHIPPING-API   ####################################################
 
+        ####################################################   SHIPPING-API   ####################################################
+        - id: private-shipping-api-0
+          uri: lb://SHIPPING-API
+          predicates:
+            - Path=/api/shipments, /api/shipments/process/**, /api/shipments/ship/**
+          filters:
+            - name: JwtAuthAdmin
+
+        - id: private-shipping-api-1
+          uri: lb://SHIPPING-API
+          predicates:
+            - Path=/api/shipments/track, /api/shipments/cancel/**
+          filters:
+            - name: JwtAuthCustomer
+
+        - id: private-shipping-api-2
+          uri: lb://SHIPPING-API
+          predicates:
+            - Path=/api/shipments/confirm-delivery, /api/shipments/list-delivery/**
+          filters:
+            - name: JwtAuthDelivery
