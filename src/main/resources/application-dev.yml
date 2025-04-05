@@ -81,6 +81,6 @@ spring:
         - id: private-shipping-api-2
           uri: lb://SHIPPING-API
           predicates:
-            - Path=/api/shipments/confirm-delivery, /api/shipments/list-delivery/**
+            - Path=/api/shipments/confirm-delivery, /api/shipments/list-delivery
           filters:
             - name: JwtAuthDelivery
