@@ -84,3 +84,10 @@ spring:
             - Path=/api/shipments/confirm-delivery, /api/shipments/list-delivery
           filters:
             - name: JwtAuthDelivery
+        ####################################################   STORE-API   ####################################################
+        - id: private-store-api-0
+          uri: lb://STORE-API
+          predicates:
+            - Path=/api/stores/**
+          filters:
+            - name: JwtAuthAdmin
