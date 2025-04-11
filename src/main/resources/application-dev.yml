@@ -85,9 +85,16 @@ spring:
           filters:
             - name: JwtAuthDelivery
         ####################################################   STORE-API   ####################################################
+        - id: public-s-api-0
+          uri: lb://STORE-API
+          predicates:
+            - Path=/api/stores/{storeId}/products, /api/stores
+          order: 1
+
         - id: private-store-api-0
           uri: lb://STORE-API
           predicates:
             - Path=/api/stores/**
           filters:
             - name: JwtAuthAdmin
+          order: 2
