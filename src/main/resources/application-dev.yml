@@ -48,18 +48,26 @@ spring:
           order: 2
 
         ####################################################   COUPON-API   ####################################################
-        - id: private-coupon-api
+        - id: private-coupon-api-0
+          uri: lb://COUPON-API
+          predicates:
+            - Path=/api/coupons/check/**
+          filters:
+            - name: JwtAuthCustomer
+
+        - id: private-coupon-api-1
           uri: lb://COUPON-API
           predicates:
             - Path=/api/consumptions/**, /api/coupons/**
           filters:
             - name: JwtAuthAdmin
 
+
         ####################################################   ORDER-API   ####################################################
         - id: private-order-api
           uri: lb://ORDER-API
           predicates:
-            - Path=/api/order/**
+            - Path=/api/v1/orders/**
           filters:
             - name: JwtAuthCustomer
 
@@ -85,30 +93,20 @@ spring:
           filters:
             - name: JwtAuthDelivery
         ####################################################   STORE-API   ####################################################
-        - id: public-s-api-0
-          uri: lb://STORE-API
-          predicates:
-            - Path=/api/stores/{storeId}/products, /api/stores
 
         - id: private-store-api-0
           uri: lb://STORE-API
           predicates:
             - Path=/api/stores/**, /api/stocks/**
           filters:
-            - name: JwtAuthAdmin
-          order: 2
+            - name: JwtAuthUser
+
 
         ####################################################   Product-API   ####################################################
-        # Admin only routes
+
         - id: private-product-api-0
           uri: lb://PRODUCT-API
           predicates:
-            - Path=/api/products, /api/products/{productId}, /api/products/**
+            - Path= /api/products/**
           filters:
             - name: JwtAuthAdmin
-        # Public (no filter) routes
-        - id: public-product-api-1
-          uri: lb://PRODUCT-API
-          predicates:
-            - Path=/api/products, /api/products/{productId}
-          filters: [ ]
